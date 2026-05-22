@@ -1,0 +1,19 @@
+[Unit]
+Description=Kirim Chiqim Django App
+After=network.target
+
+[Service]
+User=root
+WorkingDirectory=/root/kirim_chiqim
+Environment="DEBUG=False"
+Environment="SECRET_KEY=django-insecure-8z-m^i3sj7a!ybo24)gmpp3iv+%^e67ht+54es2=+qoq0zac&p"
+Environment="ALLOWED_HOSTS=147.93.130.94,178.18.252.161,localhost,127.0.0.1"
+ExecStart=/root/kirim_chiqim/venv/bin/gunicorn config.wsgi:application \
+    --bind 0.0.0.0:8021 \
+    --workers 3 \
+    --timeout 120
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

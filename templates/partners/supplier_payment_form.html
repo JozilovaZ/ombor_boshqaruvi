@@ -1,0 +1,51 @@
+{% extends "index.html" %}
+{% block title %}Yangi ta'minotchi to'lovi{% endblock %}
+{% block content %}
+<style>
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; margin-bottom: 4px; font-weight: 600; font-size: 0.9rem; }
+    .form-group input, .form-group select, .form-group textarea {
+        width: 100%; padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;
+    }
+</style>
+<div class="container-fluid py-4">
+    <div class="card" style="max-width: 640px; margin: 0 auto;">
+        <div class="card-header">
+            <h4 class="mb-0">Yangi ta'minotchi to'lovi</h4>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                <div class="form-group">
+                    {{ form.date.label_tag }}
+                    {{ form.date }}
+                </div>
+                <div class="form-group">
+                    {{ form.supplier.label_tag }}
+                    {{ form.supplier }}
+                </div>
+                <div class="form-group">
+                    {{ form.amount.label_tag }}
+                    {{ form.amount }}
+                </div>
+                <div class="form-group">
+                    {{ form.payment_type.label_tag }}
+                    {{ form.payment_type }}
+                </div>
+                <div class="form-group">
+                    {{ form.note.label_tag }}
+                    {{ form.note }}
+                </div>
+                <div class="d-flex gap-2 mt-3">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Saqlash
+                    </button>
+                    <a href="{% url 'supplier_payment_list' %}" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Bekor qilish
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

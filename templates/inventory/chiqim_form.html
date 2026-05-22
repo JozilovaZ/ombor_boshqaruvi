@@ -1,0 +1,281 @@
+{% extends "index.html" %}
+{% block title %}Chiqim qo'shish{% endblock %}
+{% block content %}
+<style>
+    #chiqim-form label { font-weight: 600; font-size: 0.9rem; display: block; margin-bottom: 4px; }
+    #chiqim-form input, #chiqim-form select, #chiqim-form textarea {
+        width: 100%; padding: 8px 10px; border: 1px solid #ddd;
+        border-radius: 6px; font-size: 14px; margin-bottom: 12px;
+    }
+    #chiqim-form > div { margin-bottom: 4px; }
+    .chiqim-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .chiqim-table { width: 100%; min-width: 560px; border-collapse: separate; border-spacing: 0;
+        background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 0 10px rgba(0,0,0,.05); }
+    .chiqim-table th { background: #4361ee; color: white; font-weight: 600; padding: 10px 8px; font-size: 13px; }
+    .chiqim-table td { padding: 10px 8px; border-bottom: 1px solid #eee; font-size: 13px; }
+    #add-formset-row { background: #28a745; color: white; border: none; border-radius: 6px;
+        padding: 8px 14px; cursor: pointer; margin-top: 10px; font-size: 14px; }
+    #submit-btn { background: #4361ee; color: white; border: none; border-radius: 6px;
+        padding: 8px 18px; cursor: pointer; font-size: 14px; }
+    .delete-row { background: #dc3545; color: white; border: none; border-radius: 4px;
+        padding: 4px 8px; cursor: pointer; font-size: 12px; }
+    .form-bottom { display: flex; justify-content: space-between; align-items: center;
+        margin-top: 16px; flex-wrap: wrap; gap: 10px; }
+    .form-row-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+    @media (max-width: 576px) {
+        .form-row-grid { grid-template-columns: 1fr; }
+        .form-bottom { flex-direction: column; align-items: stretch; }
+        .form-bottom > div { display: flex; gap: 8px; }
+        .card-body { padding: 12px; }
+    }
+</style>
+<div class="container-fluid py-3">
+    <div class="card">
+        <div class="card-header">
+            <h4>Chiqim qo'shish</h4>
+        </div>
+        <div class="card-body">
+            {% if messages %}
+            <div class="alert alert-dismissible fade show">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endif %}
+
+            <form method="post" id="chiqim-form">
+                {% csrf_token %}
+                <div class="form-row-grid">
+                    <div>
+                        <label for="{{ form.date.id_for_label }}">Sana*</label>
+                        {{ form.date }}
+                        {% if form.date.errors %}<div class="text-danger small">{{ form.date.errors }}</div>{% endif %}
+                    </div>
+                    <div>
+                        <label for="{{ form.warehouse.id_for_label }}">Ombor*</label>
+                        {{ form.warehouse }}
+                        {% if form.warehouse.errors %}<div class="text-danger small">{{ form.warehouse.errors }}</div>{% endif %}
+                    </div>
+                    <div>
+                        <label for="{{ form.customer.id_for_label }}">Xaridor*</label>
+                        {{ form.customer }}
+                        {% if form.customer.errors %}<div class="text-danger small">{{ form.customer.errors }}</div>{% endif %}
+                    </div>
+                    <div>
+                        <label for="{{ form.total_amount.id_for_label }}">Jami summa*</label>
+                        {{ form.total_amount }}
+                        {% if form.total_amount.errors %}<div class="text-danger small">{{ form.total_amount.errors }}</div>{% endif %}
+                    </div>
+                    <div>
+                        <label for="{{ form.paid_amount.id_for_label }}">To'langan summa*</label>
+                        {{ form.paid_amount }}
+                        {% if form.paid_amount.errors %}<div class="text-danger small">{{ form.paid_amount.errors }}</div>{% endif %}
+                    </div>
+                    <div>
+                        <label for="id_debt">Qarz</label>
+                        <input type="number" id="id_debt" name="debt" step="0.01" readonly>
+                    </div>
+                </div>
+                <div>
+                    <label for="{{ form.note.id_for_label }}">Izoh</label>
+                    {{ form.note }}
+                    {% if form.note.errors %}<div class="text-danger small">{{ form.note.errors }}</div>{% endif %}
+                </div>
+
+                <h5 class="mt-3 mb-2">Mahsulotlar*</h5>
+                {{ formset.management_form }}
+                <div class="chiqim-table-wrap">
+                    <table class="chiqim-table">
+                        <thead>
+                            <tr>
+                                <th>Mahsulot*</th>
+                                <th>Miqdor*</th>
+                                <th>Narx*</th>
+                                <th>Jami</th>
+                                <th>Mavjud</th>
+                                <th>O'chirish</th>
+                            </tr>
+                        </thead>
+                        <tbody id="formset-container">
+                            {% for form in formset %}
+                            <tr class="formset-row" data-form-index="{{ forloop.counter0 }}">
+                                <td>{{ form.product }}{% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
+                                    {% if form.product.errors %}<div class="text-danger small">{{ form.product.errors }}</div>{% endif %}
+                                </td>
+                                <td>{{ form.quantity }}
+                                    {% if form.quantity.errors %}<div class="text-danger small">{{ form.quantity.errors }}</div>{% endif %}
+                                </td>
+                                <td>{{ form.price }}
+                                    {% if form.price.errors %}<div class="text-danger small">{{ form.price.errors }}</div>{% endif %}
+                                </td>
+                                <td><input type="number" class="row-total" step="0.01" readonly></td>
+                                <td><span class="available-stock">0</span></td>
+                                <td>{{ form.DELETE }}
+                                    <button type="button" class="delete-row"><i class="fas fa-trash"></i></button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <button type="button" id="add-formset-row">
+                    <i class="fas fa-plus-circle"></i> Yangi mahsulot qo'shish
+                </button>
+
+                <div class="form-bottom">
+                    <span class="fw-bold">Umumiy summa: <span id="grand-total">0</span> so'm</span>
+                    <div>
+                        <a href="{% url 'outgoing_list' %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Bekor qilish
+                        </a>
+                        <button type="submit" id="submit-btn">
+                            <i class="fas fa-save"></i> Saqlash
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(document).ready(function() {
+    const formsetContainer = $('#formset-container');
+    const addButton = $('#add-formset-row');
+    const totalFormsInput = $('#id_form-TOTAL_FORMS');
+    const grandTotalDisplay = $('#grand-total');
+    let formCount = parseInt(totalFormsInput.val());
+
+    // Warehouse o'zgarishida mahsulotlarni yuklash
+    $('#id_warehouse').on('change', function() {
+        const warehouseId = $(this).val();
+        if (warehouseId) {
+            loadProductsByWarehouse(warehouseId);
+        } else {
+            $('select[name*="-product"]').html('<option value="">---------</option>');
+            $('.available-stock').text('0');
+        }
+    });
+
+    function loadProductsByWarehouse(warehouseId) {
+        $.get('/inventory/get_products_by_warehouse/', {warehouse_id: warehouseId})
+            .done(function(data) {
+                $('select[name*="-product"]').each(function() {
+                    let options = '<option value="">---------</option>';
+                    data.products.forEach(product => {
+                        options += `<option value="${product.id}" data-stock="${product.stock}" data-unit="${product.unit}">${product.name}</option>`;
+                    });
+                    $(this).html(options);
+                });
+            })
+            .fail(function() {
+                alert('Mahsulotlarni yuklashda xatolik yuz berdi');
+            });
+    }
+
+    function addNewRow() {
+        const newRow = formsetContainer.find('.formset-row').first().clone();
+        newRow.find('input, select').each(function() {
+            if (this.type === 'checkbox') {
+                this.checked = false;
+            } else if (!this.readOnly) {
+                this.value = '';
+            }
+        });
+        newRow.find('.error').remove();
+        newRow.find('.available-stock').text('0');
+        newRow.attr('data-form-index', formCount);
+        newRow.find('[name]').each(function() {
+            this.name = this.name.replace(/\d+/, formCount);
+            this.id = this.id.replace(/\d+/, formCount);
+        });
+        formsetContainer.append(newRow);
+        formCount++;
+        totalFormsInput.val(formCount);
+    }
+
+    function updateRowTotal(row) {
+        const quantity = parseFloat(row.find('input[name*="-quantity"]').val()) || 0;
+        const price = parseFloat(row.find('input[name*="-price"]').val()) || 0;
+        row.find('.row-total').val((quantity * price).toFixed(2));
+        updateGrandTotal();
+    }
+
+    function updateGrandTotal() {
+        let grandTotal = 0;
+        formsetContainer.find('.formset-row').each(function() {
+            if (!$(this).find('input[name*="-DELETE"]').prop('checked')) {
+                grandTotal += parseFloat($(this).find('.row-total').val()) || 0;
+            }
+        });
+        $('#id_total_amount').val(grandTotal.toFixed(2));
+        grandTotalDisplay.text(Math.round(grandTotal));
+        updateDebt();
+    }
+
+    function updateDebt() {
+        const total = parseFloat($('#id_total_amount').val()) || 0;
+        const paid = parseFloat($('#id_paid_amount').val()) || 0;
+        $('#id_debt').val(Math.max(0, total - paid).toFixed(2));
+    }
+
+    $(document).on('input', 'input[name*="-quantity"], input[name*="-price"]', function() {
+        updateRowTotal($(this).closest('.formset-row'));
+    });
+
+    $(document).on('click', '.delete-row', function() {
+        $(this).closest('.formset-row').find('input[name*="-DELETE"]').prop('checked', true).closest('tr').hide();
+        updateGrandTotal();
+    });
+
+    $('#id_paid_amount').on('input', updateDebt);
+
+    $('#add-formset-row').on('click', addNewRow);
+
+    $('#chiqim-form').on('submit', function(e) {
+        e.preventDefault();
+        let isValid = true;
+        const errors = [];
+
+        if (!$('#id_warehouse').val()) {
+            errors.push('Ombor tanlangan bo‘lishi kerak!');
+            isValid = false;
+        }
+
+        formsetContainer.find('.formset-row').each(function() {
+            const row = $(this);
+            if (!row.find('input[name*="-DELETE"]').prop('checked')) {
+                if (!row.find('select[name*="-product"]').val()) {
+                    errors.push('Mahsulot tanlangan bo‘lishi kerak!');
+                    isValid = false;
+                }
+                const qty = parseFloat(row.find('input[name*="-quantity"]').val()) || 0;
+                if (qty <= 0) {
+                    errors.push('Miqdor to‘g‘ri kiritilishi kerak!');
+                    isValid = false;
+                }
+                const price = parseFloat(row.find('input[name*="-price"]').val()) || 0;
+                if (price <= 0) {
+                    errors.push('Narx to‘g‘ri kiritilishi kerak!');
+                    isValid = false;
+                }
+            }
+        });
+
+        if (isValid) {
+            this.submit();
+        } else {
+            alert('Xatoliklar mavjud:\n' + errors.join('\n'));
+        }
+    });
+
+    // Boshlang‘ich hisoblanishlar
+    formsetContainer.find('.formset-row').each(function() {
+        updateRowTotal($(this));
+    });
+    updateGrandTotal();
+});
+</script>
+{% endblock %}
